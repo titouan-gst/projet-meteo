@@ -1,0 +1,10 @@
+# Fichiers de résultats
+meteo.txt
+meteo_*.txt
+*.json
+
+# Fichiers de log
+meteo_error.log
+
+# Fichiers temporaires
+meteo_brute.txt
