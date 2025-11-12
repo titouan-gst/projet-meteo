@@ -1,33 +1,65 @@
 #!/bin/bash
 
-# V1.2 : Extraction des températures actuelles et prévisions de demain
-# Version simplifiée et fiable avec wttr.in ?format=
+# V2.1 : Script avec ville par défaut si aucun argument n'est fourni 
 
-# Vérifie si l'utilisateur a fourni un nom de ville en argument
-if [ -z "$1" ]; then
-  echo "Erreur : Veuillez fournir un nom de ville en argument."
-  echo "Exemple : ./Extracteur_Meteo.sh Toulouse"
-  exit 1
-fi
+# Si aucun argument n'est fourni on utilise la ville de "Toulouse" par défaut
+VILLE=${1:-"Toulouse"}
 
-# Stocke l'argument (la ville)
-VILLE=$1
+# Fichier local où sauvegarder les données brutes
+FICHIER_BRUT="meteo_brute.txt"
+
+# Utilise curl pour récupérer les données météorologiques
+# -s : Mode silencieux (pas de barre de progression)
+# "wttr.in/$VILLE" : L'URL du service, avec la variable VILLE
+# > "$FICHIER_BRUT" : Redirige la sortie de curl vers le fichier local
+curl -s "wttr.in/${VILLE}?2&T&lang=fr" > "$FICHIER_BRUT"
 
 # Récupération des températures via wttr.in en format simple
 # %t -> température actuelle
-# %T -> prévision pour demain
 TEMP_ACTUELLE=$(curl -s "wttr.in/$VILLE?format=%t")
-PREVISION_DEMAIN=$(curl -s "wttr.in/$VILLE?format=%T")
+# 3. Extraction Prévision 
+PREVISION_DEMAIN=$(awk '
+BEGIN {
+    tab_count=0
+    in_second=0
+    max=""
+}
+/^┌/ && /┤/ {
+    tab_count++
+    if(tab_count==2) in_second=1
+}
+in_second {
+    # ignorer les lignes sans °C ou contenant km/h, mm, km
+    if($0 !~ /°C/ || $0 ~ /km\/h/ || $0 ~ /mm/ || $0 ~ / km/) next
+    ligne=$0
+    while(match(ligne, /[+-]?[0-9]+(\([0-9]+\))? ?°C/)) {
+        temp=substr(ligne,RSTART,RLENGTH)
+        gsub(/ ?°C/,"",temp)
+        gsub(/\(.*\)/,"",temp)
+        if(max=="" || temp>max) max=temp
+        ligne=substr(ligne,RSTART+RLENGTH)
+    }
+}
+END {
+    if(max!="") {
+        printf "%+.0f°C\n", max
+    } else {
+        print "N/A"
+    }
+}
+' "$FICHIER_BRUT")
 
-# Affiche les résultats
-echo "Ville : $VILLE"
-echo "Température actuelle : $TEMP_ACTUELLE"
-echo "Prévision demain : $PREVISION_DEMAIN"
+# --- Formatage ---
+# Objectif: Rendre les infos lisibles
 
-# Enregistre les résultats dans meteo.txt sur une seule ligne
-DATE=$(date '+%Y-%m-%d')
-HEURE=$(date '+%H:%M')
+# Déclaration des variables DATE et HEURE
+DATE=$(date +"%Y-%m-%d")
+HEURE=$(date +"%H:%M")
+
+# Format demandé : [Date] - [Heure] - Ville : [Temp] - [Prévision]
+LIGNE_FORMATTEE="${DATE} - ${HEURE} - ${VILLE} : ${TEMP_ACTUELLE} - ${PREVISION_DEMAIN}"
+
+# Enregistre les données dans meteo.txt sur une seule ligne
 echo "$DATE - $HEURE - $VILLE : $TEMP_ACTUELLE - $PREVISION_DEMAIN" >> meteo.txt
 
-echo "Données ajoutées dans meteo.txt."
-
+echo "Les données météo de la ville de $VILLE ont été enregistrées dans le fichier meteo.txt."
