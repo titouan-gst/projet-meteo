@@ -23,6 +23,9 @@ FICHIER_BRUT="meteo_brute.txt"
 # > "$FICHIER_BRUT" : Redirige la sortie de curl vers le fichier local
 curl -s "wttr.in/${VILLE}?2&T&lang=fr" > "$FICHIER_BRUT"
 
+# Récupération des températures via wttr.in en format simple
+# %t -> température actuelle
+TEMP_ACTUELLE=$(curl -s "wttr.in/$VILLE?format=%t")
 # 3. Extraction Prévision (partie corrigée)
 PREVISION_DEMAIN=$(awk '
 BEGIN {
