@@ -1,12 +1,15 @@
 #!/bin/bash
 
 # V2.1 : Script avec ville par défaut si aucun argument n'est fourni 
+### TÂCHE V2.2 : Rendre le script "Cron-Safe" ###
+# Détermine le chemin absolu où se trouve le script.
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # Si aucun argument n'est fourni on utilise la ville de "Toulouse" par défaut
 VILLE=${1:-"Toulouse"}
 
 # Fichier local où sauvegarder les données brutes
-FICHIER_BRUT="meteo_brute.txt"
+FICHIER_BRUT="$SCRIPT_DIR/meteo_brute.txt"
 
 # Utilise curl pour récupérer les données météorologiques
 # -s : Mode silencieux (pas de barre de progression)
