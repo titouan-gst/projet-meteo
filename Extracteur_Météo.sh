@@ -60,6 +60,6 @@ HEURE=$(date +"%H:%M")
 LIGNE_FORMATTEE="${DATE} - ${HEURE} - ${VILLE} : ${TEMP_ACTUELLE} - ${PREVISION_DEMAIN}"
 
 # Enregistre les données dans meteo.txt sur une seule ligne
-echo "$DATE - $HEURE - $VILLE : $TEMP_ACTUELLE - $PREVISION_DEMAIN" >> meteo.txt
+echo "$LIGNE_FORMATTEE" >> meteo.txt
 
 echo "Les données météo de la ville de $VILLE ont été enregistrées dans le fichier meteo.txt."
