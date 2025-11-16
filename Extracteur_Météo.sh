@@ -15,6 +15,21 @@ VILLE=${1:-"Toulouse"}
 # Fichier local où sauvegarder les données brutes
 FICHIER_BRUT="$SCRIPT_DIR/meteo_brute.txt"
 
+### ------------------------------------------------------------------
+### VARIANTE 3 : Configuration des Logs
+### ------------------------------------------------------------------
+
+# Fichier de log (chemin absolu)
+LOG_ERROR="$SCRIPT_DIR/meteo_error.log"
+
+# Fonction pour enregistrer les erreurs avec timestamp
+log_error() {
+  local message="$1"
+  local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+  # Écrit l'erreur dans le fichier de log
+  echo "[$timestamp] - ERREUR: $message" >> "$LOG_ERROR"
+}
+
 ## ------------------------------------------------------------------
 ## ÉTAPE 1 : RÉCUPÉRATION DES DONNÉES
 ## ------------------------------------------------------------------
