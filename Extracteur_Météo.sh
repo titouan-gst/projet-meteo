@@ -1,55 +1,51 @@
 #!/bin/bash
 
-## ------------------------------------------------------------------
-## CONFIGURATION ET GESTION DES ARGUMENTS
-## ------------------------------------------------------------------
+# ====================================================================
+# CONFIGURATION DU PROJET (V2.0 / VARIANTE 3)
+# ====================================================================
 
-# V2.1 : Script avec ville par défaut si aucun argument n'est fourni
-# TÂCHE V2.2 : Rendre le script "Cron-Safe"
-# Détermine le chemin absolu où se trouve le script.
+# Détermine le chemin absolu du script pour un usage sûr avec cron. (V2.2)
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-# Si aucun argument n'est fourni on utilise la ville de "Toulouse" par défaut
-VILLE=${1:-"Toulouse"}
+# Si aucun argument n'est fourni, utilise la ville de "Toulouse" par défaut. (V2.1)
+VILLE=${1:-"Toulouse"} 
 
-# Fichier local où sauvegarder les données brutes
+# Fichier de log et fichier brut temporaire (VARIANTE 3 / V1.1)
+LOG_ERROR="$SCRIPT_DIR/meteo_error.log"
 FICHIER_BRUT="$SCRIPT_DIR/meteo_brute.txt"
 
-### ------------------------------------------------------------------
-### VARIANTE 3 : Configuration des Logs
-### ------------------------------------------------------------------
-
-# Fichier de log (chemin absolu)
-LOG_ERROR="$SCRIPT_DIR/meteo_error.log"
-
-# Fonction pour enregistrer les erreurs avec timestamp
+# Fonction pour enregistrer les erreurs avec timestamp (VARIANTE 3)
 log_error() {
-  local message="$1"
-  local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-  # Écrit l'erreur dans le fichier de log
-  echo "[$timestamp] - ERREUR: $message" >> "$LOG_ERROR"
+  local message="$1"
+  local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+  echo "[$timestamp] - ERREUR: $message" >> "$LOG_ERROR"
 }
 
-## ------------------------------------------------------------------
-## ÉTAPE 1 : RÉCUPÉRATION DES DONNÉES
-## ------------------------------------------------------------------
+# ====================================================================
+# V1.1 : RÉCUPÉRATION DES DONNÉES BRUTES ET VÉRIFICATION DE L'ERREUR
+# ====================================================================
 
-# Utilise curl pour récupérer les données météorologiques
-# -s : Mode silencieux (pas de barre de progression)
-# "wttr.in/$VILLE" : L'URL du service, avec la variable VILLE
-# > "$FICHIER_BRUT" : Redirige la sortie de curl vers le fichier local
+# Utilise curl pour récupérer les données météorologiques brutes.
 curl -s "wttr.in/${VILLE}?2&T&lang=fr" > "$FICHIER_BRUT"
 
-## ------------------------------------------------------------------
-## ÉTAPE 2 : EXTRACTION DES DONNÉES
-## ------------------------------------------------------------------
+# --- VARIANTE 3 : VÉRIFICATION DE LA CONNEXION ---
+if [ $? -ne 0 ]; then
+  # $? stocke le code de retour de la dernière commande (curl).
+  log_error "Échec de la connexion à wttr.in ou données non reçues pour $VILLE."
+  exit 1 # Quitter le script pour éviter de traiter des données vides
+fi
+# --- FIN VÉRIFICATION CONNEXION ---
+
+# ====================================================================
+# V1.2 / V1.3 / VARIANTE 1 : EXTRACTION DES MÉTRIQUES
+# ====================================================================
 
 # --- Température actuelle ---
 # Récupération des températures via wttr.in en format simple
 # %t -> température actuelle
 TEMP_ACTUELLE=$(curl -s "wttr.in/$VILLE?format=%t")
 
-# --- Prévision du lendemain ---
+# Extraction de la température actuelle (V1.2)
 PREVISION_DEMAIN=$(awk '
 BEGIN {
     tab_count=0
@@ -81,45 +77,37 @@ END {
 }
 ' "$FICHIER_BRUT")
 
-## ------------------------------------------------------------------
-## VARIANTE 1 : EXTRACTION DES INFORMATIONS SUPPLÉMENTAIRES
-## ------------------------------------------------------------------
+# --- CORRECTION VARIANTE 1 : EXTRACTION ROBUSTE (Fix N/A) ---
 
-# Extraction vitesse du vent (ex : "Vent: 15 km/h")
-VENT=$(grep -m 1 -E "Vent" "$FICHIER_BRUT" | sed -E 's/.*Vent:? *//')
+# 1. Extraction du Vent et de l'Humidité via l'API directe (plus fiable)
+VENT=$(curl -s "wttr.in/$VILLE?format=%w&lang=fr" | xargs)
+HUMIDITE=$(curl -s "wttr.in/$VILLE?format=%h&lang=fr" | xargs)
 
-# Extraction humidité (ex : "Humidité: 70%")
-HUMIDITE=$(grep -m 1 -E "Humidité" "$FICHIER_BRUT" | sed -E 's/.*Humidité:? *//')
+# 2. Extraction de la Visibilité depuis le fichier brut
+# L'option -a force grep à lire le fichier comme du texte (évite les erreurs binaires)
+VISIBILITE=$(grep -a "Visibilité" "$FICHIER_BRUT" | head -1 | sed 's/[^0-9]*\([0-9]* *km\).*/\1/' | xargs)
 
-# Extraction visibilité (ex : "Visibilité: 10 km")
-VISIBILITE=$(grep -m 1 -E "Visibilité" "$FICHIER_BRUT" | sed -E 's/.*Visibilité:? *//')
-
-# Sécurisation si non trouvés
+# Sécurisation des variables si non trouvées
 VENT=${VENT:-"N/A"}
 HUMIDITE=${HUMIDITE:-"N/A"}
 VISIBILITE=${VISIBILITE:-"N/A"}
 
-## ------------------------------------------------------------------
-## ÉTAPE 3 : FORMATAGE ET SAUVEGARDE (V3)
-## ------------------------------------------------------------------
+# ====================================================================
+# V1.4 / V3.0 : FORMATAGE ET ARCHIVAGE TEXTE
+# ====================================================================
 
-# --- Formatage ---
-# Objectif: Rendre les infos lisibles
-
-# Déclaration des variables DATE et HEURE
+# Déclaration des variables DATE et HEURE (V1.3)
 DATE=$(date +"%Y-%m-%d")
 HEURE=$(date +"%H:%M")
 
-
-# Nouveau format avec les données supplémentaires
+# Définition de la ligne formatée (V1.4 / VARIANTE 1)
 LIGNE_FORMATTEE="${DATE} - ${HEURE} - ${VILLE} : ${TEMP_ACTUELLE} - ${PREVISION_DEMAIN} - Vent : ${VENT} - Humidité : ${HUMIDITE} - Visibilité : ${VISIBILITE}"
-# --- Gestion de l'historique (V3) ---
 
-# 1. Définir le nom du fichier d'historique basé sur la date du jour (YYYYMMDD)
+# Définition du nom de base du fichier d'historique (V3.0)
 FICHIER_HISTORIQUE="$SCRIPT_DIR/meteo_$DATE.txt"
 
-# 2. Enregistre les données dans le fichier du jour (en ajoutant >>)
+# Enregistre les données au format texte (append)
 echo "$LIGNE_FORMATTEE" >> "$FICHIER_HISTORIQUE"
     
-# 3. Mettre à jour le message de confirmation
+# Affichage du message de confirmation
 echo "Les données météo de la ville de $VILLE ont été enregistrées dans le fichier $FICHIER_HISTORIQUE."
