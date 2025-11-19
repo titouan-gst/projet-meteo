@@ -82,6 +82,24 @@ END {
 ' "$FICHIER_BRUT")
 
 ## ------------------------------------------------------------------
+## VARIANTE 1 : EXTRACTION DES INFORMATIONS SUPPLÉMENTAIRES
+## ------------------------------------------------------------------
+
+# Extraction vitesse du vent (ex : "Vent: 15 km/h")
+VENT=$(grep -m 1 -E "Vent" "$FICHIER_BRUT" | sed -E 's/.*Vent:? *//')
+
+# Extraction humidité (ex : "Humidité: 70%")
+HUMIDITE=$(grep -m 1 -E "Humidité" "$FICHIER_BRUT" | sed -E 's/.*Humidité:? *//')
+
+# Extraction visibilité (ex : "Visibilité: 10 km")
+VISIBILITE=$(grep -m 1 -E "Visibilité" "$FICHIER_BRUT" | sed -E 's/.*Visibilité:? *//')
+
+# Sécurisation si non trouvés
+VENT=${VENT:-"N/A"}
+HUMIDITE=${HUMIDITE:-"N/A"}
+VISIBILITE=${VISIBILITE:-"N/A"}
+
+## ------------------------------------------------------------------
 ## ÉTAPE 3 : FORMATAGE ET SAUVEGARDE (V3)
 ## ------------------------------------------------------------------
 
@@ -92,9 +110,9 @@ END {
 DATE=$(date +"%Y-%m-%d")
 HEURE=$(date +"%H:%M")
 
-# Format demandé : [Date] - [Heure] - Ville : [Temp] - [Prévision]
-LIGNE_FORMATTEE="${DATE} - ${HEURE} - ${VILLE} : ${TEMP_ACTUELLE} - ${PREVISION_DEMAIN}"
 
+# Nouveau format avec les données supplémentaires
+LIGNE_FORMATTEE="${DATE} - ${HEURE} - ${VILLE} : ${TEMP_ACTUELLE} - ${PREVISION_DEMAIN} - Vent : ${VENT} - Humidité : ${HUMIDITE} - Visibilité : ${VISIBILITE}"
 # --- Gestion de l'historique (V3) ---
 
 # 1. Définir le nom du fichier d'historique basé sur la date du jour (YYYYMMDD)
