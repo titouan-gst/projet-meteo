@@ -7,7 +7,7 @@
 # Détermine le chemin absolu du script pour un usage sûr avec cron. (V2.2)
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-# Si aucun argument n'est fourni, utilise la ville de "Toulouse" par défaut. (V2.1)
+# Si aucun argument n'est fourni on utilise la ville de "Toulouse" par défaut. (V2.1)
 VILLE=${1:-"Toulouse"} 
 
 # Fichier de log et fichier brut temporaire (VARIANTE 3 / V1.1)
@@ -93,7 +93,7 @@ HUMIDITE=${HUMIDITE:-"N/A"}
 VISIBILITE=${VISIBILITE:-"N/A"}
 
 # ====================================================================
-# V1.4 / V3.0 : FORMATAGE ET ARCHIVAGE TEXTE
+# V1.4 / V3.0 / VARIANTE 2 : FORMATAGE ET ARCHIVAGE TEXTE/JSON
 # ====================================================================
 
 # Déclaration des variables DATE et HEURE (V1.3)
@@ -111,3 +111,28 @@ echo "$LIGNE_FORMATTEE" >> "$FICHIER_HISTORIQUE"
     
 # Affichage du message de confirmation
 echo "Les données météo de la ville de $VILLE ont été enregistrées dans le fichier $FICHIER_HISTORIQUE."
+
+# Fichier météo JSON (VARIANTE 2)
+FICHIER_METEO_JSON="meteo_$DATE.json"
+
+# On crée un fichier météo sous format JSON (VARIANTE 2)
+jq -n --arg date "$DATE" \
+    --arg heure "$HEURE" \
+    --arg ville "$VILLE" \
+    --arg temp_actuelle "$TEMP_ACTUELLE" \
+    --arg prevision_demain "$PREVISION_DEMAIN" \
+    --arg vent "$VENT" \
+    --arg humidite "$HUMIDITE" \
+    --arg visibilite "$VISIBILITE" \
+        '{
+        "date": $date,
+        "heure": $heure,
+        "ville": $ville,
+        "temperature": $temp_actuelle,
+        "prevision_demain": $prevision_demain,
+        "vent": $vent,
+        "humidite": $humidite,
+        "visibilite": $visibilite
+        }' > "$FICHIER_METEO_JSON"
+
+echo  "Les données météo de la ville de $VILLE ont été enregistrées dans le fichier météo JSON créé : $FICHIER_METEO_JSON."
