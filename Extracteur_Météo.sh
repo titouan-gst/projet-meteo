@@ -115,24 +115,29 @@ echo "Les données météo de la ville de $VILLE ont été enregistrées dans le
 # Fichier météo JSON (VARIANTE 2)
 FICHIER_METEO_JSON="meteo_$DATE.json"
 
-# On crée un fichier météo sous format JSON (VARIANTE 2)
-jq -n --arg date "$DATE" \
-    --arg heure "$HEURE" \
-    --arg ville "$VILLE" \
-    --arg temp_actuelle "$TEMP_ACTUELLE" \
-    --arg prevision_demain "$PREVISION_DEMAIN" \
-    --arg vent "$VENT" \
-    --arg humidite "$HUMIDITE" \
-    --arg visibilite "$VISIBILITE" \
-        '{
-        "date": $date,
-        "heure": $heure,
-        "ville": $ville,
-        "temperature": $temp_actuelle,
-        "prevision_demain": $prevision_demain,
-        "vent": $vent,
-        "humidite": $humidite,
-        "visibilite": $visibilite
-        }' > "$FICHIER_METEO_JSON"
+# Si le fichier n'existe pas, on crée un fichier JSON vide (VARIANTE 2)
+if [ ! -f "$FICHIER_METEO_JSON" ]; then
+    echo "{}" > "$FICHIER_METEO_JSON"
+fi
+
+# On ajoute ou met à jour les données météo d'une ville passée en argument dans le fichier JSON (VARIANTE 2)
+jq \
+  --arg ville "$VILLE" \
+  --arg date "$DATE" \
+  --arg heure "$HEURE" \
+  --arg temp_actuelle "$TEMP_ACTUELLE" \
+  --arg prevision_demain "$PREVISION_DEMAIN" \
+  --arg vent "$VENT" \
+  --arg humidite "$HUMIDITE" \
+  --arg visibilite "$VISIBILITE" \
+  '.[$ville] = { 
+      "date": $date,
+      "heure": $heure,
+      "temperature": $temp_actuelle,
+      "prevision_demain": $prevision_demain,
+      "vent": $vent,
+      "humidite": $humidite,
+      "visibilite": $visibilite
+  }' "$FICHIER_METEO_JSON" > tmp.json && mv tmp.json "$FICHIER_METEO_JSON"
 
 echo  "Les données météo de la ville de $VILLE ont été enregistrées dans le fichier météo JSON créé : $FICHIER_METEO_JSON."
