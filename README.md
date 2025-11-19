@@ -6,10 +6,10 @@ Ceci est un script Shell pour extraire les données météo de wttr.in.
 L'objectif est d'extraire la température actuelle et les prévisions du lendemain pour une ville donnée.
 
 ## Membres de l'équipe
-* Membre 1
-* Membre 2
-* Membre 3
-* Membre 4
+* GISSOT Titouan
+* RAKOTOBE Tina
+* TSIRENGE Niriko
+* SAIZE Nicolas
 
 ## Configuration d'une tâche cron
 Pour automatiser l’exécution de notre script, nous utilisons cron, l’outil de planification des tâches sous Linux. 
