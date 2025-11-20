@@ -120,24 +120,33 @@ if [ ! -f "$FICHIER_METEO_JSON" ]; then
     echo "{}" > "$FICHIER_METEO_JSON"
 fi
 
-# On ajoute ou met à jour les données météo d'une ville passée en argument dans le fichier JSON (VARIANTE 2)
-jq \
-  --arg ville "$VILLE" \
-  --arg date "$DATE" \
-  --arg heure "$HEURE" \
-  --arg temp_actuelle "$TEMP_ACTUELLE" \
-  --arg prevision_demain "$PREVISION_DEMAIN" \
-  --arg vent "$VENT" \
-  --arg humidite "$HUMIDITE" \
-  --arg visibilite "$VISIBILITE" \
-  '.[$ville] = { 
-      "date": $date,
-      "heure": $heure,
-      "temperature": $temp_actuelle,
-      "prevision_demain": $prevision_demain,
-      "vent": $vent,
-      "humidite": $humidite,
-      "visibilite": $visibilite
-  }' "$FICHIER_METEO_JSON" > tmp.json && mv tmp.json "$FICHIER_METEO_JSON"
-
-echo  "Les données météo de la ville de $VILLE ont été enregistrées dans le fichier météo JSON créé : $FICHIER_METEO_JSON."
+# On demande à l'utilisateur si il veut télécharger le fichier en format JSON (VARIANTE 2)
+echo "Voulez-vous créer un fichier au format JSON ? Entrez Y pour Oui ou N pour Non :"
+read reponse
+while [ -z "$reponse" ] || { [ "$reponse" != "Y" ] && [ "$reponse" != "N" ]; }; do
+  echo "Veuillez entrer Y pour Oui ou N pour Non :"
+  read reponse
+done
+if [ "$reponse" = "Y" ]; then 
+    # Création ou mise à jour du fichier météo JSON (VARIANTE 2)
+    jq \
+        --arg ville "$VILLE" \
+        --arg date "$DATE" \
+        --arg heure "$HEURE" \
+        --arg temp_actuelle "$TEMP_ACTUELLE" \
+        --arg prevision_demain "$PREVISION_DEMAIN" \
+        --arg vent "$VENT" \
+        --arg humidite "$HUMIDITE" \
+        --arg visibilite "$VISIBILITE" \
+        '.[$ville] = { 
+            "date": $date,
+            "heure": $heure,
+            "temperature": $temp_actuelle,
+            "prevision_demain": $prevision_demain,
+            "vent": $vent,
+            "humidite": $humidite,
+            "visibilite": $visibilite
+            }' "$FICHIER_METEO_JSON" > tmp.json && mv tmp.json "$FICHIER_METEO_JSON"
+    // On affiche le message de confirmation pour le fichier JSON         
+    echo  "Les données météo de la ville de $VILLE ont été enregistrées dans le fichier météo JSON créé : $FICHIER_METEO_JSON."
+fi
