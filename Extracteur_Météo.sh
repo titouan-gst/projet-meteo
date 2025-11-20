@@ -147,6 +147,6 @@ if [ "$reponse" = "Y" ]; then
             "humidite": $humidite,
             "visibilite": $visibilite
             }' "$FICHIER_METEO_JSON" > tmp.json && mv tmp.json "$FICHIER_METEO_JSON"
-    // On affiche le message de confirmation pour le fichier JSON         
+    # On affiche le message de confirmation pour le fichier JSON         
     echo  "Les données météo de la ville de $VILLE ont été enregistrées dans le fichier météo JSON créé : $FICHIER_METEO_JSON."
 fi
